@@ -25,20 +25,21 @@ describe("StravaApiClient", () => {
     expect(seenHeaders.auth).toBe("Bearer abc123");
   });
 
-  it("getActivityStreams passes keys + keys_by_type and returns StreamSet", async () => {
+  it("getActivityStreams normalizes array response to StreamSet", async () => {
+    // Strava returns an ARRAY of streams (verified against real API 2026-05-10)
     const fakeFetch = vi.fn(async (url) => {
       const u = new URL(String(url));
       expect(u.searchParams.get("keys")).toContain("time");
-      expect(u.searchParams.get("keys_by_type")).toBe("true");
-      return jsonResponse({
-        time: {
+      expect(u.searchParams.get("key_by_type")).toBe("true");
+      return jsonResponse([
+        {
           type: "time",
           data: [0, 1, 2],
           original_size: 3,
           resolution: "high",
           series_type: "distance",
         },
-        latlng: {
+        {
           type: "latlng",
           data: [
             [1, 2],
@@ -48,7 +49,7 @@ describe("StravaApiClient", () => {
           resolution: "high",
           series_type: "distance",
         },
-      });
+      ]);
     });
     const client = new StravaApiClient({
       accessToken: "x",
@@ -60,6 +61,26 @@ describe("StravaApiClient", () => {
       [1, 2],
       [3, 4],
     ]);
+  });
+
+  it("getActivityStreams also accepts already-keyed object (legacy shape)", async () => {
+    const fakeFetch = vi.fn(async () =>
+      jsonResponse({
+        time: {
+          type: "time",
+          data: [0, 1, 2],
+          original_size: 3,
+          resolution: "high",
+          series_type: "distance",
+        },
+      }),
+    );
+    const client = new StravaApiClient({
+      accessToken: "x",
+      fetch: fakeFetch as unknown as typeof fetch,
+    });
+    const streams = await client.getActivityStreams(123, ["time"]);
+    expect(streams.time?.data).toEqual([0, 1, 2]);
   });
 
   it("listActivities serializes after/before/page/perPage", async () => {

@@ -71,6 +71,7 @@ export type {
   StravaScope,
 } from "./api/oauth.ts";
 export {
+  normalizeStreamsResponse,
   RateLimitedError,
   StravaApiClient,
   StravaApiError,

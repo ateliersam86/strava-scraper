@@ -94,11 +94,16 @@ export class StravaApiClient {
   }
 
   /**
-   * GET /activities/{id}/streams?keys=time,distance,...&keys_by_type=true
+   * GET /activities/{id}/streams?keys=time,distance,...&key_by_type=true
    *
    * The `time` stream is what unlocks per-point timestamps for the
    * timelapse widget. Strava only includes streams the activity actually
    * has — e.g. no `heartrate` stream if no HR sensor was paired.
+   *
+   * Strava sometimes returns an array of `{type, data, ...}` and sometimes
+   * an object keyed by type (depends on the `key_by_type` param interpretation
+   * which has shifted between API versions). We normalize both shapes into
+   * a {@link StreamSet} client-side.
    */
   async getActivityStreams(
     activityId: number | string,
@@ -117,10 +122,11 @@ export class StravaApiClient {
   ): Promise<StreamSet> {
     const query: Record<string, string> = {
       keys: types.join(","),
-      keys_by_type: "true",
+      key_by_type: "true",
     };
     if (options.resolution) query.resolution = options.resolution;
-    return this.request<StreamSet>(`/activities/${activityId}/streams`, { query });
+    const raw = await this.request<unknown>(`/activities/${activityId}/streams`, { query });
+    return normalizeStreamsResponse(raw);
   }
 
   /** GET /activities/{id}/photos?size=2048&photo_sources=true */
@@ -232,4 +238,34 @@ export class StravaApiClient {
     const [shortUsage, longUsage] = parsePair(headers.get("x-ratelimit-usage"));
     this.lastRateLimit = { shortLimit, longLimit, shortUsage, longUsage };
   }
+}
+
+/**
+ * Normalize a `/streams` response into a {@link StreamSet}.
+ *
+ * Strava's API actually returns an **array** `[{type: "time", data: [...]}, ...]`
+ * regardless of `key_by_type`. We tolerate both shapes (array + already-keyed
+ * object) so the API client returns a consistent type to callers.
+ *
+ * Exported separately so consumers can use it on cached/mocked responses.
+ */
+export function normalizeStreamsResponse(raw: unknown): StreamSet {
+  if (Array.isArray(raw)) {
+    const out: Record<string, unknown> = {};
+    for (const item of raw) {
+      if (
+        item &&
+        typeof item === "object" &&
+        "type" in item &&
+        typeof (item as { type: unknown }).type === "string"
+      ) {
+        out[(item as { type: string }).type] = item;
+      }
+    }
+    return out as StreamSet;
+  }
+  if (raw && typeof raw === "object") {
+    return raw as StreamSet;
+  }
+  return {} as StreamSet;
 }

@@ -33,3 +33,6 @@ playwright-report/
 # Scraped data (sample fixtures only kept under tests/fixtures)
 scraped-output/
 out/
+
+# Real-Strava validation artifacts — contain personal data, never commit
+scripts/_validation/

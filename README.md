@@ -19,20 +19,26 @@ This library fills those gaps using authenticated HTML requests, while still lev
 
 ## Status
 
-🚧 **Pre-alpha — Phase 0 of [9-phase roadmap](docs/roadmap.md)**
+🟢 **v0.1.0 — 123 tests green, validated end-to-end against real Strava (Sam + Paul accounts)**
 
 | Phase | Status |
 | ----- | ------ |
 | 0. Bootstrap monorepo | ✅ |
-| 1. Auth (JWT cookie + persistent context) | 🚧 in progress |
-| 2. Activity HTML parser + downloads | 📋 planned |
-| 3. Photos download | 📋 planned |
-| 4. Storage adapters (FS / DB / S3) | 📋 planned |
-| 5. CLI | 📋 planned |
-| 6. API client wrapper | 📋 planned |
-| 7. Tests + fixtures | 📋 planned |
-| 8. npm publish | 📋 planned |
-| 9. atelier-web-travels integration | 📋 planned |
+| 1. Auth (JWT cookie + persistent context) | ✅ |
+| 2. Activity HTML parser (React 2025+ shape, full stats) | ✅ |
+| 3. Photos download (HD originals via signed CDN) | ✅ |
+| 4. Storage adapters (FilesystemAdapter, atomic writes) | ✅ |
+| 5. CLI (`auth`, `activity`, `photos`, `bike`, `athlete`) | ✅ |
+| 6. API client wrapper (streams, kudos, segments) | ✅ |
+| 7. Real-shape fixtures + parser robustness | ✅ |
+| 8. npm publish | 📋 deferred (install via GitHub for now) |
+| 9. atelier-web-travels integration | ✅ |
+
+Cycling **and** running pages parsed: avg/max watts, weighted-avg power,
+kilojoules, heart-rate avg/max, cadence avg/max, temperature, weather
+panel, locale-aware "14 018,4 km" parsing, pace ↔ speed conversion for
+runs, segment streams aligned with per-point timestamps. Profile sidebar
+scraping (bikes + shoes + components, distances + nicknames).
 
 ## Installation
 
@@ -49,7 +55,7 @@ cd strava-scraper
 bun install
 ```
 
-## Quickstart (planned API — not yet wired)
+## Quickstart
 
 ```typescript
 import { ScraperClient, JwtCookieAuth } from "@atelier/strava-scraper-core";

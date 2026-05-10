@@ -14,11 +14,16 @@ const FIXTURE = join(__dirname, "fixtures", "bike-page.html");
 
 describe("parseStravaDistanceToMeters", () => {
   it.each([
+    // English: comma = thousands, dot = decimal
     ["1,234.5 km", 1_234_500],
     ["500 mi", 804_673], // Math.trunc(500 * 1609.34708) — matches Python int()
     ["0 km", 0],
     ["", 0],
     ["12,000 mi", 19_312_164],
+    // French: space = thousands (stripped), comma = decimal
+    ["14 018,4 km", 14_018_400],
+    ["2 209,4 km", 2_209_400],
+    ["320 mi", 514_991],
   ])("'%s' → %i m", (input, expected) => {
     expect(parseStravaDistanceToMeters(input)).toBe(expected);
   });

@@ -17,8 +17,9 @@
 
 import * as cheerio from "cheerio";
 import type { ActivityPhoto } from "../types/activity.ts";
-import type { AthleteProfile, RecentActivity } from "../types/athlete.ts";
+import type { AthleteProfile, ProfileGearItem, RecentActivity } from "../types/athlete.ts";
 import { extractReactComponents, findComponent } from "./activity-react.ts";
+import { parseStravaDistanceToMeters } from "./bike.ts";
 
 export class AthleteProfileParseError extends Error {
   constructor(message: string) {
@@ -117,6 +118,14 @@ export function parseAthleteProfileHtml(html: string, athleteId: number | string
     }
   }
 
+  // ── Public gear sidebar: <div class="section stats gear bikes"> / .shoes
+  //    Each row: <td>name</td><td>X,Y&nbsp;km</td>.
+  //    Verified against the reference account's profile on 2026-05-10.
+  const bikes = parseGearTable($, "div.section.stats.gear.bikes");
+  if (bikes.length) out.bikes = bikes;
+  const shoes = parseGearTable($, "div.section.stats.gear.shoes");
+  if (shoes.length) out.shoes = shoes;
+
   // Profile photos (across activities)
   const mediaList = findComponent(components, "MediaThumbnailList");
   if (mediaList) {
@@ -145,6 +154,23 @@ export function parseAthleteProfileHtml(html: string, athleteId: number | string
     }
   }
 
+  return out;
+}
+
+function parseGearTable($: cheerio.CheerioAPI, selector: string): ProfileGearItem[] {
+  const out: ProfileGearItem[] = [];
+  $(selector)
+    .first()
+    .find("table tbody tr")
+    .each((_, row) => {
+      const cells = $(row).find("td");
+      if (cells.length < 2) return;
+      const name = $(cells[0]).text().trim();
+      const distanceText = $(cells[1]).text().trim().replace(/ /g, " "); // non-breaking spaces
+      if (!name) return;
+      const distanceMeters = parseStravaDistanceToMeters(distanceText);
+      out.push({ name, distanceMeters });
+    });
   return out;
 }
 

@@ -157,6 +157,20 @@ export function parseActivityPageReact(html: string, activityId: number | string
     if (sw && ne) out.bounds = { southwest: sw, northeast: ne };
   }
 
+  // ── Gear name (server-rendered HTML, not React props).
+  //    Activity page contains:
+  //      <div class="gear spans8">
+  //        Vélo:
+  //        <span class="gear-name">cuuubbbe</span>
+  //      </div>
+  //    Verified against the reference account's "Jour 7" activity on 2026-05-10.
+  //    Strava doesn't expose the gear ID on this page (it's just the name).
+  const $ = cheerio.load(html);
+  const gearName = $(".gear .gear-name").first().text().trim();
+  if (gearName) {
+    out.gear = { id: "", name: gearName };
+  }
+
   return out;
 }
 

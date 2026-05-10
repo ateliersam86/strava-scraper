@@ -281,14 +281,43 @@ export function parseBikeComponentsHtml(html: string): BikeComponent[] {
 }
 
 /**
- * Convert "1,234.5 mi" / "987.6 km" / "" → meters.
+ * Convert a distance string Strava renders into meters. Handles both
+ * English ("1,234.5 mi") and French ("14 018,4 km") locales.
+ *
+ * - English: comma = thousands separator, dot = decimal → "1,234.5" = 1234.5
+ * - French:  space/NBSP = thousands, comma = decimal     → "14 018,4" = 14018.4
+ *
+ * Heuristic: if the string contains BOTH `,` and `.`, it's English (commas
+ * are thousands). If only `,` exists, treat it as decimal (French).
  */
 export function parseStravaDistanceToMeters(text: string): number {
   const trimmed = text.trim();
   if (!trimmed) return 0;
   const isMiles = /\bmi\b/i.test(trimmed);
-  const numericRaw = trimmed.replace(/,/g, "").replace(/[^\d.]/g, "");
-  const numeric = Number.parseFloat(numericRaw);
+
+  // Strip everything except digits, commas, dots
+  let s = trimmed.replace(/[^\d.,]/g, "");
+  if (!s) return 0;
+
+  const hasDot = s.includes(".");
+  const commas = s.match(/,/g)?.length ?? 0;
+  if (hasDot || commas > 1) {
+    // English: comma is thousands separator (e.g. "1,234,567.89")
+    s = s.replace(/,/g, "");
+  } else if (commas === 1) {
+    // Single comma, no dot. Disambiguate by digits AFTER the comma:
+    //   "12,000" → exactly 3 digits = English thousands → drop the comma
+    //   "14 018,4" / "5,2" → 1-2 digits = French decimal → swap to dot
+    const afterComma = s.split(",")[1] ?? "";
+    if (afterComma.length === 3 && /^\d{3}$/.test(afterComma)) {
+      s = s.replace(/,/g, "");
+    } else {
+      s = s.replace(/,/g, ".");
+    }
+  }
+  // If only dot exists, already in canonical form.
+
+  const numeric = Number.parseFloat(s);
   if (Number.isNaN(numeric)) return 0;
   // Truncate (not round) to match stravaweblib's `int()` behaviour exactly.
   return Math.trunc(numeric * (isMiles ? MILES_PER_KM * 1000 : 1000));

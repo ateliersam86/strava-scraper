@@ -52,6 +52,19 @@ describe("parseAthleteProfileHtml (Strava 2025+ profile page)", () => {
     });
   });
 
+  it("extracts public bikes + shoes from sidebar gear tables", async () => {
+    const html = await readFile(FIXTURE, "utf-8");
+    const profile = parseAthleteProfileHtml(html, 12345);
+    expect(profile.bikes).toEqual([
+      { name: "Specialized Diverge", distanceMeters: 14_018_400 },
+      { name: "le Kona", distanceMeters: 2_209_400 },
+    ]);
+    expect(profile.shoes).toEqual([
+      // 500 mi × 1609.34708 = 804,673 m (Math.trunc to match Python int())
+      { name: "Salomon Sense Ride", distanceMeters: 804_673 },
+    ]);
+  });
+
   it("returns minimal profile when there are no React components", () => {
     const html = `<html><body><h1>Just Name</h1><a href="/activities/123">go</a></body></html>`;
     const profile = parseAthleteProfileHtml(html, "abc");

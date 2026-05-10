@@ -68,6 +68,14 @@ describe("parseActivityPageReact (Strava 2025+ format)", () => {
     });
   });
 
+  it("extracts gear name from the .gear .gear-name span", async () => {
+    const html = await readFile(FIXTURE, "utf-8");
+    const a = parseActivityPageReact(html, "99887766");
+    expect(a.gear).toMatchObject({ name: "Specialized Diverge" });
+    // Strava doesn't expose the gear ID on the activity page; we leave id as ""
+    expect(a.gear?.id).toBe("");
+  });
+
   it("extracts trace bounds from the chained .mbr() JS builder", async () => {
     const html = await readFile(FIXTURE, "utf-8");
     const a = parseActivityPageReact(html, "99887766");

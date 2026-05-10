@@ -26,6 +26,14 @@ export type RecentActivity = {
   elevationGainMeters?: number;
 };
 
+/** Public gear listing entry from the profile page sidebar. */
+export type ProfileGearItem = {
+  /** Display name as shown on Strava (e.g. "Specialized Diverge", "le Kona"). */
+  name: string;
+  /** Total distance accumulated, in meters (Strava renders "X,Y km" / "Z mi"). */
+  distanceMeters: number;
+};
+
 export type AthleteProfile = {
   id: number | string;
   name?: string;
@@ -48,4 +56,14 @@ export type AthleteProfile = {
    * archive workflow when you don't want to per-activity re-scrape.
    */
   recentPhotos?: ActivityPhoto[];
+  /**
+   * Public bikes listed on the profile (sidebar `<div class="section stats gear bikes">`).
+   * Strava only shows name + accumulated distance — no IDs are exposed publicly.
+   */
+  bikes?: ProfileGearItem[];
+  /**
+   * Public shoes listed on the profile (sidebar `<div class="section stats gear shoes">`).
+   * Same caveat as bikes — name + distance only.
+   */
+  shoes?: ProfileGearItem[];
 };

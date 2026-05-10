@@ -17,7 +17,14 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
-    "allowJs": false
+    "allowJs": false,
+    "baseUrl": ".",
+    "paths": {
+      "@atelier/strava-scraper-core": ["packages/core/src/index.ts"],
+      "@atelier/strava-scraper-core/*": ["packages/core/src/*"],
+      "@atelier/strava-scraper-storage": ["packages/storage-adapters/src/index.ts"],
+      "@atelier/strava-scraper-storage/*": ["packages/storage-adapters/src/*"]
+    }
   },
   "include": ["packages/*/src/**/*", "packages/*/tests/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts.snap"]

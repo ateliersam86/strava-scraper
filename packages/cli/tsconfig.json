@@ -1,8 +1,14 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "rootDir": "./src",
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "@atelier/strava-scraper-core": ["../core/src/index.ts"],
+      "@atelier/strava-scraper-core/*": ["../core/src/*"],
+      "@atelier/strava-scraper-storage": ["../storage-adapters/src/index.ts"],
+      "@atelier/strava-scraper-storage/*": ["../storage-adapters/src/*"]
+    }
   },
   "include": ["src/**/*"]
 }

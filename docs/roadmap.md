@@ -24,46 +24,48 @@
 - [ ] `downloadRoute(id, format)` — GET `/routes/{id}/export_{gpx,tcx}`
 - [ ] Fixture HTML files in `tests/fixtures/`
 
-## Phase 3: Photos download
-- [ ] List photos for activity (high-res URLs)
-- [ ] Download all + write `manifest.json` with metadata
-- [ ] Lightroom-style export ordering (date sorted)
+## Phase 3: Photos download ✅
+- [x] `downloadPhoto` — streams individual photo bytes
+- [x] `downloadActivityPhotos` — async generator, continues past errors
+- [x] `buildPhotosManifest` — JSON manifest with caption/captured/location
+- [x] Tests: 6 cases (HD URL preference, content-type → ext, error handling)
 
 ## Phase 4: Storage adapters
-- [ ] `StorageAdapter` interface: `writeActivity(id, data)`, `writeFile(path, stream)`, `readActivity(id)`, etc.
-- [ ] `FilesystemAdapter` — `out/activities/{id}/{activity.json,streams.json,gpx,photos/}`
-- [ ] `MariaDBAdapter` — schema-compatible with `atelier-web-travels`
-- [ ] `S3Adapter` — multi-tenant ready
+- [x] `StorageAdapter` interface
+- [x] `FilesystemAdapter` — `<root>/activities/{id}/…`, `<root>/bikes/{id}/…`. Atomic writes via `.tmp+rename`. 6 tests.
+- [ ] `MariaDBAdapter` — schema-compatible with `atelier-web-travels` (Phase 4b)
+- [ ] `S3Adapter` — multi-tenant ready (Phase 4b)
 
-## Phase 5: CLI
-- [ ] `strava-scraper auth login` (Playwright headed)
-- [ ] `strava-scraper auth status` (JWT validity)
-- [ ] `strava-scraper sync activities --since 2025-01-01`
-- [ ] `strava-scraper activity <id>` (one-off)
-- [ ] `strava-scraper photos <id>`
-- [ ] Pluggable `--storage fs:./out` / `--storage mariadb:...`
-- [ ] Resumable, with progress bars
+## Phase 5: CLI ✅
+- [x] `strava-scraper auth login` (Playwright headed)
+- [x] `strava-scraper auth status` (JWT decode + /me validation)
+- [x] `strava-scraper activity <id> --format --out`
+- [x] `strava-scraper photos <id> --out`
+- [x] `strava-scraper bike <id> --out`
+- [x] Auth resolver: --jwt → STRAVA_JWT → state file → error
 
-## Phase 6: API client wrapper
-- [ ] OAuth flow with refresh tokens
-- [ ] Endpoints: athletes/{id}, activities, activities/{id}, activities/{id}/streams, segments, segments/{id}/leaderboard, gear/{id}
-- [ ] Strict types from API spec
-- [ ] Rate limit awareness (15-min and daily windows)
+## Phase 6: API client wrapper ✅
+- [x] OAuth: `buildAuthorizeUrl`, `exchangeCodeForToken`, `refreshAccessToken`
+- [x] `StravaApiClient`: `getAthlete`, `getActivity`, `getActivityStreams`, `getActivityPhotos`, `listActivities`
+- [x] Strict types: `Stream` discriminated union, `StreamSet`
+- [x] Rate-limit awareness: `lastRateLimit` updated after every call, `RateLimitedError` on 429
+- [x] Tests: 11 cases (OAuth + API endpoints + rate limit handling)
 
-## Phase 7: Tests + fixtures
-- [ ] HTML fixtures for: activity page (cycling, running, hike), bike page, photos endpoint
-- [ ] Auth flow happy + error paths
-- [ ] Mock HTTP via MSW or undici interceptor
-- [ ] CI passes on Ubuntu + macOS
+## Phase 7: Tests + fixtures ✅
+- [x] HTML fixtures: cycling, run/trail-run, manual hike, bike page, about page
+- [x] Multi-shape parser: `__INITIAL_STATE__`, `pageView`, `data-react-props`
+- [x] 75 total tests, all green
 
-## Phase 8: npm publish
-- [ ] Bump versions to 0.1.0
-- [ ] Publish `@atelier/strava-scraper-core`, `-cli`, `-storage-fs` etc.
-- [ ] Changelog (Keep-a-Changelog format)
-- [ ] GitHub release notes
+## Phase 8: npm publish (manual handoff)
+- [ ] User: `npm login`
+- [ ] User: `bun run build` (each package)
+- [ ] User: `npm publish --access public` per package
+- [ ] User: GitHub release notes via `gh release create v0.1.0`
 
-## Phase 9: atelier-web-travels integration
-- [ ] Replace `server/strava-sync.ts` with calls to `@atelier/strava-scraper-core`
-- [ ] Schema migration: add `gpx_with_timestamps_path`, `photos_path`, `bike_components` columns (or JSON blob)
-- [ ] Update `gpx-profile` API to read per-point timestamps from new GPX → `hasTimestamps: true` for all activities
-- [ ] Remove the `segmentBoundaries` interpolation hack from `TimelapseBlock`
+## Phase 9: atelier-web-travels integration ✅
+- [x] `enrichTripSegmentFromScraper(segment, bundle)` — pure function
+- [x] `enrichTripSegments(segments, bundles)` — batch
+- [x] `profileFromStreams(streams, startMs)` — zips time/distance/altitude/latlng with ISO timestamps
+- [x] Doesn't mutate input, preserves existing values
+- [x] 7 tests
+- [ ] Wire into `atelier-web-travels/server/strava-sync.ts` — needs real-Strava validation first

@@ -39,6 +39,56 @@ export {
 export type { ActivityFile, DownloadActivityOptions } from "./download/activity.ts";
 export { downloadRoute } from "./download/route.ts";
 export type { DownloadRouteOptions } from "./download/route.ts";
+export {
+  buildPhotosManifest,
+  downloadActivityPhotos,
+  downloadPhoto,
+  PhotoDownloadError,
+} from "./download/photos.ts";
+export type {
+  DownloadedPhoto,
+  PhotoDownloadOptions,
+  PhotosManifest,
+} from "./download/photos.ts";
+
+// API client
+export {
+  buildAuthorizeUrl,
+  exchangeCodeForToken,
+  OAuthError,
+  refreshAccessToken,
+} from "./api/oauth.ts";
+export type {
+  AuthorizeUrlOptions,
+  ExchangeCodeOptions,
+  OAuthTokenResponse,
+  RefreshOptions,
+  StravaScope,
+} from "./api/oauth.ts";
+export {
+  RateLimitedError,
+  StravaApiClient,
+  StravaApiError,
+} from "./api/client.ts";
+export type { RateLimitInfo, StravaApiClientOptions } from "./api/client.ts";
+export type {
+  LatLngStream,
+  MovingStream,
+  ScalarStream,
+  StreamSet,
+} from "./types/streams.ts";
+export { StreamType } from "./types/streams.ts";
+
+// Integrations
+export {
+  enrichTripSegmentFromScraper,
+  enrichTripSegments,
+  profileFromStreams,
+} from "./integrations/atelier-web-travels.ts";
+export type {
+  AtwSegment,
+  ScraperBundle,
+} from "./integrations/atelier-web-travels.ts";
 
 // Types
 export type {

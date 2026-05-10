@@ -19,6 +19,7 @@
       },
       "dependencies": {
         "@atelier/strava-scraper-core": "workspace:*",
+        "@atelier/strava-scraper-storage": "workspace:*",
         "commander": "^12.1.0",
       },
     },

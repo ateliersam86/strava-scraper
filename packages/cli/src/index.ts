@@ -1,11 +1,97 @@
 #!/usr/bin/env node
 /**
- * @atelier/strava-scraper-cli
+ * strava-scraper CLI.
  *
- * Phase 5 (planned): commands for `strava-scraper auth login`, `sync`,
- * `activity <id>`, `photos <id>`. For now this is a placeholder so the
- * monorepo's typecheck step has a valid entry point.
+ * Commands:
+ * - `auth login`      Open Chrome for interactive login (Playwright)
+ * - `auth status`     Print current JWT status / athlete id
+ * - `activity <id>`   Download original GPX/FIT/TCX + parse the HTML page
+ * - `photos <id>`     Download all photos at HD resolution
+ * - `bike <id>`       Download bike components
+ *
+ * Auth resolution order (per command):
+ * 1. `STRAVA_JWT` env var → `JwtCookieAuth`
+ * 2. `--jwt <value>` flag → `JwtCookieAuth`
+ * 3. `.auth/strava-storage-state.json` → `PersistentContextAuth`
+ * 4. Otherwise: error with hint to run `auth login`.
  */
 
-console.error("strava-scraper CLI is not implemented yet — see Phase 5 of the roadmap.");
-process.exit(2);
+import { program } from "commander";
+import { downloadActivityCommand } from "./commands/activity.ts";
+import { authLogin, authStatus } from "./commands/auth.ts";
+import { downloadBikeCommand } from "./commands/bike.ts";
+import { downloadPhotosCommand } from "./commands/photos.ts";
+
+program
+  .name("strava-scraper")
+  .description("Scrape Strava data the official API hides — original GPX/FIT, photos, gear.")
+  .version("0.1.0");
+
+const auth = program.command("auth").description("Authentication helpers");
+auth
+  .command("login")
+  .description("Open Chrome for interactive login. Saves session for future commands.")
+  .option("--state <path>", "Where to save the session", ".auth/strava-storage-state.json")
+  .option("--force", "Force re-login even if a session exists")
+  .action(async (opts) => {
+    await authLogin({ statePath: opts.state, force: !!opts.force });
+  });
+auth
+  .command("status")
+  .description("Show the current authentication status")
+  .option("--jwt <value>", "JWT to validate (overrides STRAVA_JWT)")
+  .option("--state <path>", "Path to a saved Playwright session", ".auth/strava-storage-state.json")
+  .action(async (opts) => {
+    await authStatus({ jwt: opts.jwt, statePath: opts.state });
+  });
+
+program
+  .command("activity <id>")
+  .description("Download an activity's original file + parse its HTML page")
+  .option("--format <fmt>", "original | gpx | tcx (default: original)", "original")
+  .option("--out <dir>", "Output root directory", "./out")
+  .option("--jwt <value>", "JWT (overrides STRAVA_JWT)")
+  .option("--state <path>", "Playwright session file", ".auth/strava-storage-state.json")
+  .option("--no-page-parse", "Skip downloading + parsing the activity HTML page")
+  .action(async (id, opts) => {
+    await downloadActivityCommand({
+      activityId: id,
+      format: opts.format,
+      outDir: opts.out,
+      jwt: opts.jwt,
+      statePath: opts.state,
+      parsePage: opts.pageParse !== false,
+    });
+  });
+
+program
+  .command("photos <id>")
+  .description("Download all HD photos for an activity")
+  .option("--out <dir>", "Output root directory", "./out")
+  .option("--jwt <value>", "JWT (overrides STRAVA_JWT)")
+  .option("--state <path>", "Playwright session file", ".auth/strava-storage-state.json")
+  .action(async (id, opts) => {
+    await downloadPhotosCommand({
+      activityId: id,
+      outDir: opts.out,
+      jwt: opts.jwt,
+      statePath: opts.state,
+    });
+  });
+
+program
+  .command("bike <id>")
+  .description("Download bike component table (id starts with 'b')")
+  .option("--out <dir>", "Output root directory", "./out")
+  .option("--jwt <value>", "JWT (overrides STRAVA_JWT)")
+  .option("--state <path>", "Playwright session file", ".auth/strava-storage-state.json")
+  .action(async (id, opts) => {
+    await downloadBikeCommand({
+      bikeId: id,
+      outDir: opts.out,
+      jwt: opts.jwt,
+      statePath: opts.state,
+    });
+  });
+
+await program.parseAsync(process.argv);

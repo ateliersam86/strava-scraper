@@ -37,10 +37,13 @@ This library fills those gaps using authenticated HTML requests, while still lev
 ## Installation
 
 ```bash
-# Once published to npm:
-bun add @atelier/strava-scraper-core
+# From GitHub (current — npm publish is deferred):
+bun add github:ateliersam86/strava-scraper#v0.1.0
 
-# For now, install from this repo:
+# Or as a workspace dependency in another monorepo:
+bun add file:../strava-scraper/packages/core
+
+# For development on the scraper itself:
 git clone https://github.com/ateliersam86/strava-scraper.git
 cd strava-scraper
 bun install

@@ -18,6 +18,7 @@
 
 import { program } from "commander";
 import { downloadActivityCommand } from "./commands/activity.ts";
+import { downloadAthleteCommand } from "./commands/athlete.ts";
 import { authLogin, authStatus } from "./commands/auth.ts";
 import { downloadBikeCommand } from "./commands/bike.ts";
 import { downloadGearCommand } from "./commands/gear.ts";
@@ -92,6 +93,28 @@ program
       outDir: opts.out,
       jwt: opts.jwt,
       statePath: opts.state,
+    });
+  });
+
+program
+  .command("athlete <id>")
+  .description(
+    "Scrape any athlete's public profile (name, recent activities, photos). " +
+      "With --activities, also batch-download each recent activity (file + parse).",
+  )
+  .option("--out <dir>", "Output root directory", "./out")
+  .option("--jwt <value>", "JWT cookie (overrides STRAVA_JWT)")
+  .option("--state <path>", "Playwright session file", ".auth/strava-storage-state.json")
+  .option("--activities", "Also batch-download each recent activity", false)
+  .option("--limit <n>", "Cap on activities to download (most-recent first)", "0")
+  .action(async (id, opts) => {
+    await downloadAthleteCommand({
+      athleteId: id,
+      outDir: opts.out,
+      jwt: opts.jwt,
+      statePath: opts.state,
+      downloadActivities: !!opts.activities,
+      limit: Number.parseInt(opts.limit, 10) || 0,
     });
   });
 

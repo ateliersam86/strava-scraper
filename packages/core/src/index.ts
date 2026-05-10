@@ -31,6 +31,11 @@ export {
 } from "./parse/activity-react.ts";
 export type { ReactComponent } from "./parse/activity-react.ts";
 export {
+  parseAthleteProfileHtml,
+  AthleteProfileParseError,
+} from "./parse/athlete.ts";
+export type { AthleteProfile, RecentActivity } from "./types/athlete.ts";
+export {
   parseBikeComponentsHtml,
   parseBikeMetadataHtml,
   parseBikePageHtml,

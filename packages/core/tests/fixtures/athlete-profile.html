@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Synthetic Athlete | Strava (2025+ format)</title>
+  </head>
+  <body>
+    <h1>Synthetic Athlete Name</h1>
+
+    <div data-react-class="AvatarWrapper" data-react-props='{"src":"https://cdn.example.com/avatar-large.jpg","type":"athlete","name":"Synthetic Athlete","size":"xlarge","badge":"premium","alt":"Synthetic","href":"https://www.strava.com/athletes/12345"}'></div>
+
+    <div data-react-class="AthleteProfileHeaderMediaGrid" data-react-props='{"items":[
+      {"photo_id":"uuid-1","id":1001,"activity_id":777,"large":"https://cdn.example.com/p1.jpg","native":true,"owner_id":12345,"activity":{"id":777,"athlete_id":12345,"name":"Morning Ride","description":"Quick spin","type":"Ride","start_date":"2026-05-09T07:00:00Z","distance":35000.5,"moving_time":4500,"total_elevation_gain":420}},
+      {"photo_id":"uuid-2","id":1002,"activity_id":777,"large":"https://cdn.example.com/p2.jpg","native":true,"owner_id":12345,"activity":{"id":777,"name":"Morning Ride"}},
+      {"photo_id":"uuid-3","id":1003,"activity_id":888,"large":"https://cdn.example.com/p3.jpg","native":true,"owner_id":12345,"activity":{"id":888,"athlete_id":12345,"name":"Trail Run","type":"TrailRun","start_date":"2026-05-08T18:30:00Z","distance":12000,"moving_time":3600}}
+    ],"isLoggedIn":true,"profileType":"athlete","experiments":{}}'></div>
+
+    <div data-react-class="MediaThumbnailList" data-react-props='{"items":[
+      {"photo_id":"uuid-1","id":1001,"large":"https://cdn.example.com/p1.jpg","native":true,"caption_escaped":"Sunrise"},
+      {"photo_id":"uuid-3","id":1003,"large":"https://cdn.example.com/p3.jpg","native":true}
+    ],"isLoggedIn":true}'></div>
+
+    <ul class="feed">
+      <li><a href="/activities/777">Morning Ride</a></li>
+      <li><a href="/activities/888">Trail Run</a></li>
+      <li><a href="/activities/999">Older Ride</a></li>
+      <li><a href="/activities/777#kudos">duplicate ref</a></li>
+    </ul>
+  </body>
+</html>

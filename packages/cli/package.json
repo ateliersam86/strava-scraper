@@ -1,0 +1,22 @@
+{
+  "name": "@atelier/strava-scraper-cli",
+  "version": "0.1.0",
+  "description": "Command-line interface for strava-scraper.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "strava-scraper": "./dist/index.js"
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@atelier/strava-scraper-core": "workspace:*",
+    "commander": "^12.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

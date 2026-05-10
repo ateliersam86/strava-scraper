@@ -1,0 +1,32 @@
+{
+  "name": "strava-scraper-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "TypeScript Strava HTML scraper + API client. Extracts what the official API hides: original GPX/FIT/TCX with timestamps, bike components, photos, and more.",
+  "license": "MIT",
+  "author": "Samuel Muselet <sam.muselet@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ateliersam86/strava-scraper.git"
+  },
+  "type": "module",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "build": "bun run --filter '*' build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.json && bun run --filter '*' typecheck",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/bun": "^1.1.14",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "bun": ">=1.1.0"
+  }
+}

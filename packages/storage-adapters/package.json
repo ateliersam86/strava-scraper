@@ -1,0 +1,38 @@
+{
+  "name": "@atelier/strava-scraper-storage",
+  "version": "0.1.0",
+  "description": "Pluggable storage adapters (filesystem / MariaDB / S3) for strava-scraper.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./filesystem": {
+      "types": "./dist/filesystem.d.ts",
+      "import": "./dist/filesystem.js"
+    },
+    "./mariadb": {
+      "types": "./dist/mariadb.d.ts",
+      "import": "./dist/mariadb.js"
+    },
+    "./s3": {
+      "types": "./dist/s3.d.ts",
+      "import": "./dist/s3.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@atelier/strava-scraper-core": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

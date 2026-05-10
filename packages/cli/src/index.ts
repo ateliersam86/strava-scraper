@@ -98,20 +98,21 @@ program
 program
   .command("gear")
   .description(
-    "Backup all gear (bikes + shoes): metadata via API, components via HTML scrape. " +
-      "Requires OAuth access token (STRAVA_API_TOKEN) for the API endpoints.",
+    "Backup ALL gear (bikes + shoes) via HTML scraping. Lists gear from " +
+      "/settings/gear, scrapes /bikes/{id} (metadata + components) and " +
+      "/shoes/{id} (metadata). OAuth token optional for additive enrichment.",
   )
   .option("--out <dir>", "Output root directory", "./out")
-  .option("--api-token <value>", "OAuth access token (overrides STRAVA_API_TOKEN)")
-  .option("--jwt <value>", "JWT for components scrape (overrides STRAVA_JWT)")
+  .option("--jwt <value>", "JWT cookie (overrides STRAVA_JWT)")
   .option("--state <path>", "Playwright session file", ".auth/strava-storage-state.json")
-  .option("--no-components", "Skip the HTML components scrape (API-only metadata)")
+  .option("--api-token <value>", "Optional OAuth token to enrich missing fields")
+  .option("--no-components", "Skip the components table scrape (faster)")
   .action(async (opts) => {
     await downloadGearCommand({
       outDir: opts.out,
-      apiToken: opts.apiToken,
       jwt: opts.jwt,
       statePath: opts.state,
+      apiToken: opts.apiToken ?? process.env["STRAVA_API_TOKEN"],
       noComponents: opts.components === false,
     });
   });

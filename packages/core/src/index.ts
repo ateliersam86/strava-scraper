@@ -25,6 +25,11 @@ export {
 } from "./parse/activity.ts";
 export {
   parseBikeComponentsHtml,
+  parseBikeMetadataHtml,
+  parseBikePageHtml,
+  parseGearListHtml,
+  parseShoeMetadataHtml,
+  parseShoePageHtml,
   parseStravaDate,
   parseStravaDistanceToMeters,
   BikePageParseError,

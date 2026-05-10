@@ -26,7 +26,7 @@
  */
 
 import * as cheerio from "cheerio";
-import type { ActivityStats } from "../types/activity.ts";
+import type { ActivityStats, ActivityWeather } from "../types/activity.ts";
 
 // Label canonicalization: lowercase + strip accents so we can match
 // French + English without an alias table that grows forever.
@@ -47,8 +47,10 @@ const LABEL_MAP: Record<string, keyof ActivityStats | "device" | "ignore"> = {
   "elevation gain": "totalElevationGainMeters",
   denivele: "totalElevationGainMeters",
   elevation: "totalElevationGainMeters",
-  // Speed
-  vitesse: "averageSpeedMetersPerSecond", // resolved by avg vs max in table
+  // Speed (cycling) and pace (running) both feed averageSpeedMetersPerSecond
+  // — the value parser detects the format ("22,4 km/h" vs "4:20 /km") and
+  // converts accordingly.
+  vitesse: "averageSpeedMetersPerSecond",
   speed: "averageSpeedMetersPerSecond",
   pace: "averageSpeedMetersPerSecond",
   allure: "averageSpeedMetersPerSecond",
@@ -63,12 +65,17 @@ const LABEL_MAP: Record<string, keyof ActivityStats | "device" | "ignore"> = {
   "puissance moyenne": "averageWatts",
   "average power": "averageWatts",
   "puissance ponderee": "weightedAverageWatts",
+  "puissance moy. ponderee": "weightedAverageWatts",
+  "puissance moyenne ponderee": "weightedAverageWatts",
   "weighted avg power": "weightedAverageWatts",
+  "weighted average power": "weightedAverageWatts",
   puissance: "averageWatts", // fallback
   // Energy / calories
   "depense d'energie": "kilojoules",
   "depense denergie": "kilojoules",
+  "effort total": "kilojoules", // Roubaix-style label: "Effort total: 1 284 kJ"
   "energy output": "kilojoules",
+  "total work": "kilojoules",
   calories: "caloriesKcal",
   // Cadence
   cadence: "averageCadence",
@@ -94,22 +101,36 @@ export function extractActivityStatsFromHtml(html: string): {
     assignByLabel(out, labelText, valueText, "single");
   });
 
-  // ── Pass 2: .more-stats > table (Avg/Max + colspan=2 single values) ───
+  // ── Pass 2a: .more-stats > table (cycling format, Avg/Max columns) ───
   $(".more-stats table tbody tr").each((_, tr) => {
     const labelText = $(tr).find("th").first().text().trim();
     if (!labelText) return;
     const tds = $(tr).find("td");
     if (tds.length === 0) return;
     if (tds.length === 1 || $(tds[0]).attr("colspan") === "2") {
-      // Single value (Calories, Température, Temps écoulé, ...)
       const value = $(tds[0]).text().trim();
       assignByLabel(out, labelText, value, "single");
     } else if (tds.length >= 2) {
-      // Avg / Max columns
       const avg = $(tds[0]).text().trim();
       const max = $(tds[1]).text().trim();
       assignByLabel(out, labelText, avg, "avg");
       if (max) assignByLabel(out, labelText, max, "max");
+    }
+  });
+
+  // ── Pass 2b: .more-stats > .row > .spans5 + .spans3 (running format) ──
+  // Each .row holds N pairs of (label .spans5, value .spans3).
+  $(".more-stats > .row").each((_, row) => {
+    const children = $(row).children();
+    for (let i = 0; i < children.length - 1; i++) {
+      const labelEl = $(children[i]);
+      const valueEl = $(children[i + 1]);
+      if (!labelEl.hasClass("spans5") || !valueEl.hasClass("spans3")) continue;
+      const labelText = labelEl.text().trim();
+      const valueText = valueEl.text().trim();
+      if (!labelText || !valueText) continue;
+      assignByLabel(out, labelText, valueText, "single");
+      i++; // consumed pair, skip the value el
     }
   });
 
@@ -191,6 +212,14 @@ function parseValueToNumber(field: keyof ActivityStats, value: string): number |
       return /\bft\b/i.test(value) ? Math.round(n * 0.3048) : Math.round(n);
     case "averageSpeedMetersPerSecond":
     case "maxSpeedMetersPerSecond": {
+      // Pace ("4:20 /km" or "7:00 /mi") is shown for runs/walks. Convert to
+      // speed: speed_mps = unit_meters / pace_seconds.
+      const paceSeconds = parsePaceToSeconds(value);
+      if (paceSeconds != null && paceSeconds > 0) {
+        const isPerMile = /\/\s*mi\b/i.test(value);
+        const meters = isPerMile ? 1609.34708 : 1000;
+        return meters / paceSeconds;
+      }
       const isMph = /\bmph\b/i.test(value);
       return isMph ? n * 0.44704 : n / 3.6; // km/h → m/s
     }
@@ -212,6 +241,90 @@ function parseValueToNumber(field: keyof ActivityStats, value: string): number |
     default:
       return n;
   }
+}
+
+/**
+ * Parse a running pace string ("4:20 /km" or "7:00 /mi") to seconds. Returns
+ * null if the value isn't pace-shaped (the caller falls back to km/h speed).
+ */
+function parsePaceToSeconds(text: string): number | null {
+  // Must contain "/km" or "/mi" — otherwise it's a speed/duration.
+  if (!/\/\s*(km|mi)\b/i.test(text)) return null;
+  const m = text.match(/(\d+):(\d{1,2})/);
+  if (!m) return null;
+  const minutes = Number.parseInt(m[1] ?? "0", 10);
+  const seconds = Number.parseInt(m[2] ?? "0", 10);
+  return minutes * 60 + seconds;
+}
+
+/**
+ * Extract weather data from the standalone `.weather-stats` panel.
+ * Strava renders weather alongside (not inside) the stats sections:
+ *   <div class="weather-stats">
+ *     <div class="weather-stat">
+ *       <div class="weather-label">Température</div>
+ *       <div class="weather-value">15 ℃</div>
+ *     </div>
+ *     ...
+ *   </div>
+ *
+ * Captured: temperature, feels-like, humidity, wind speed, wind direction.
+ */
+export function extractActivityWeatherFromHtml(html: string): ActivityWeather | undefined {
+  const $ = cheerio.load(html);
+  const panel = $(".weather-stats").first();
+  if (panel.length === 0) return undefined;
+
+  const out: ActivityWeather = {};
+  panel.find(".weather-stat").each((_, statEl) => {
+    const label = $(statEl).find(".weather-label").first().text().trim();
+    const value = $(statEl).find(".weather-value").first().text().trim();
+    if (!label) return;
+    const key = canonicalLabel(label);
+
+    if (!value) {
+      // Some stats only have a label (e.g. "Nuages" condition icon)
+      if (!out.description) out.description = label;
+      return;
+    }
+
+    if (key === "temperature") {
+      const n = parseTemperature(value);
+      if (n != null) out.temperatureCelsius = n;
+    } else if (key === "ressenti" || key === "feels like") {
+      const n = parseTemperature(value);
+      if (n != null) out.feelsLikeCelsius = n;
+    } else if (key === "humidite" || key === "humidity") {
+      const n = parsePercent(value);
+      if (n != null) out.humidityPercent = n;
+    } else if (key === "vitesse du vent" || key === "wind speed") {
+      const n = parseWindSpeedMps(value);
+      if (n != null) out.windSpeedMetersPerSecond = n;
+    } else if (key === "direction du vent" || key === "wind direction") {
+      out.windDirectionText = value;
+    }
+  });
+
+  return Object.values(out).some((v) => v !== undefined) ? out : undefined;
+}
+
+function parseTemperature(value: string): number | null {
+  const n = Number.parseFloat(canonicalNumeric(value) ?? "");
+  if (!Number.isFinite(n)) return null;
+  if (/°?\s*F\b/.test(value)) return Math.round(((n - 32) * 5) / 9);
+  return Math.round(n);
+}
+
+function parsePercent(value: string): number | null {
+  const n = Number.parseFloat(canonicalNumeric(value) ?? "");
+  return Number.isFinite(n) ? n : null;
+}
+
+function parseWindSpeedMps(value: string): number | null {
+  const n = Number.parseFloat(canonicalNumeric(value) ?? "");
+  if (!Number.isFinite(n)) return null;
+  if (/\bmph\b/i.test(value)) return n * 0.44704;
+  return n / 3.6; // km/h → m/s
 }
 
 /** Parse "1:23:45" / "23:45" / "1 234,5" / "1,234.5" → numeric seconds for time, raw number otherwise. */

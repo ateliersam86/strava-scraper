@@ -30,7 +30,7 @@
 
 import * as cheerio from "cheerio";
 import type { Activity, ActivityPhoto, LatLng } from "../types/activity.ts";
-import { extractActivityStatsFromHtml } from "./activity-stats.ts";
+import { extractActivityStatsFromHtml, extractActivityWeatherFromHtml } from "./activity-stats.ts";
 
 /**
  * One React component instance from the page. The `props` field is the
@@ -158,11 +158,15 @@ export function parseActivityPageReact(html: string, activityId: number | string
     if (sw && ne) out.bounds = { southwest: sw, northeast: ne };
   }
 
-  // ── Stats panel (ul.inline-stats + div.more-stats > table).
+  // ── Stats panel (ul.inline-stats + div.more-stats — both table and row layouts).
   //    Locale-aware (FR + EN), label-driven mapping.
   const { stats, deviceName } = extractActivityStatsFromHtml(html);
   if (Object.keys(stats).length > 0) out.stats = stats;
   if (deviceName) out.deviceName = deviceName;
+
+  // ── Weather panel (.weather-stats) — separate from main stats.
+  const weather = extractActivityWeatherFromHtml(html);
+  if (weather) out.weather = weather;
 
   // ── Gear name (server-rendered HTML, not React props).
   //    Activity page contains:
@@ -175,7 +179,10 @@ export function parseActivityPageReact(html: string, activityId: number | string
   const $ = cheerio.load(html);
   const gearName = $(".gear .gear-name").first().text().trim();
   if (gearName) {
-    out.gear = { id: "", name: gearName };
+    // Strip the trailing "(NN km)" / "(NN mi)" total-distance Strava appends
+    // to the gear name for runs (e.g., "ASICS Metaspeed Sky Tokyo (71,7 km)").
+    const cleaned = gearName.replace(/\s*\([\d.,\s]+\s*(?:km|mi)\)\s*$/i, "").trim();
+    out.gear = { id: "", name: cleaned };
   }
 
   return out;

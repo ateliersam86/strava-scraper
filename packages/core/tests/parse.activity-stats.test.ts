@@ -114,6 +114,64 @@ describe("extractActivityStatsFromHtml — French locale (Paul-style)", () => {
   });
 });
 
+describe("extractActivityStatsFromHtml — running format (.row > .spans5/.spans3)", () => {
+  it("parses pace + Calories + elevation from the run-style more-stats layout", () => {
+    const html = `<html><body>
+      <ul class="inline-stats">
+        <li><strong>42,25 km</strong><div class="label">Distance</div></li>
+        <li><strong>3:02:49</strong><div class="label">Durée de déplacement</div></li>
+        <li><strong>4:20 /km</strong><div class="label">Allure</div></li>
+      </ul>
+      <div class="section more-stats">
+        <div class="row">
+          <div class="spans5">Dénivelé positif</div>
+          <div class="spans3"><strong>594 m</strong></div>
+          <div class="spans5">Calories</div>
+          <div class="spans3"><strong>2 912</strong></div>
+        </div>
+        <div class="row">
+          <div class="spans5">Temps écoulé</div>
+          <div class="spans3"><strong>3:03:46</strong></div>
+        </div>
+      </div>
+    </body></html>`;
+    const { stats } = extractActivityStatsFromHtml(html);
+    expect(stats.distanceMeters).toBe(42_250);
+    // Pace 4:20/km → 1000 / 260s = 3.846 m/s
+    expect(stats.averageSpeedMetersPerSecond).toBeCloseTo(3.846, 2);
+    expect(stats.totalElevationGainMeters).toBe(594);
+    expect(stats.caloriesKcal).toBe(2912);
+    expect(stats.elapsedTimeSeconds).toBe(3 * 3600 + 3 * 60 + 46);
+  });
+
+  it("converts mile-pace (7:00 /mi) correctly", () => {
+    const html = `<html><body>
+      <ul class="inline-stats">
+        <li><strong>1 mi</strong><div class="label">Distance</div></li>
+        <li><strong>7:00 /mi</strong><div class="label">Pace</div></li>
+      </ul>
+    </body></html>`;
+    const { stats } = extractActivityStatsFromHtml(html);
+    // Pace 7:00/mi → 1609.34708 / 420s = 3.832 m/s
+    expect(stats.averageSpeedMetersPerSecond).toBeCloseTo(1609.34708 / 420, 2);
+  });
+});
+
+describe("extractActivityStatsFromHtml — Roubaix-style cycling extras", () => {
+  it("parses 'Puissance moy. pondérée' and 'Effort total' (kJ)", () => {
+    const html = `<html><body>
+      <ul class="inline-stats">
+        <li><strong>44,61 km</strong><div class="label">Distance</div></li>
+        <li><strong>287 W</strong><div class="label">Puissance moy. pondérée</div></li>
+        <li><strong>1 284 kJ</strong><div class="label">Effort total</div></li>
+      </ul>
+    </body></html>`;
+    const { stats } = extractActivityStatsFromHtml(html);
+    expect(stats.weightedAverageWatts).toBe(287);
+    expect(stats.kilojoules).toBe(1284);
+  });
+});
+
 describe("extractActivityStatsFromHtml — English locale", () => {
   it("parses Distance / Moving Time / Elevation / Speed (mph)", () => {
     const html = buildHtml({

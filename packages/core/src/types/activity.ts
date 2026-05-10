@@ -138,9 +138,13 @@ export type BikeComponent = {
 
 export type ActivityWeather = {
   temperatureCelsius?: number;
+  /** "Feels like" / apparent temperature, °C. */
+  feelsLikeCelsius?: number;
   humidityPercent?: number;
   windSpeedMetersPerSecond?: number;
   windBearingDegrees?: number;
+  /** Cardinal-direction string from Strava (e.g. "WNW", "S", "NE"). */
+  windDirectionText?: string;
   description?: string;
 };
 

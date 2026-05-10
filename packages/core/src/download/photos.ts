@@ -99,15 +99,25 @@ export async function downloadPhoto(
  * Iterate over `photos` and yield a {@link DownloadedPhoto} per item. Errors
  * on individual photos are caught and reported via `onError` (default:
  * console.error) — one bad photo doesn't abort the whole batch.
+ *
+ * By default, photos with `source: "instagram"` are skipped — they're hosted
+ * by Instagram, not Strava, and downloading them is a separate concern (auth,
+ * rate limits, ToS). Pass `includeInstagram: true` if you want to attempt
+ * downloads from CloudFront-cached Instagram URLs (success rate varies).
  */
 export async function* downloadActivityPhotos(
   photos: readonly ActivityPhoto[],
   options: PhotoDownloadOptions & {
     onError?: (err: PhotoDownloadError) => void;
+    includeInstagram?: boolean;
   } = {},
 ): AsyncGenerator<DownloadedPhoto> {
   const onError = options.onError ?? ((err) => console.error(err.message));
+  const includeInstagram = options.includeInstagram ?? false;
   for (const photo of photos) {
+    if (photo.source === "instagram" && !includeInstagram) {
+      continue;
+    }
     try {
       yield await downloadPhoto(photo, options);
     } catch (err) {

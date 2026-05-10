@@ -32,6 +32,7 @@ import { pipeline } from "node:stream/promises";
 // `Readable.fromWeb`'s expected type. Casting via `unknown` keeps both
 // runtimes happy under strict TS.
 import type { Activity, BikeComponent } from "../../core/src/types/activity.ts";
+import type { Gear } from "../../core/src/types/gear.ts";
 import type { StorageAdapter } from "./index.ts";
 
 export type FilesystemAdapterOptions = {
@@ -87,6 +88,12 @@ export class FilesystemAdapter implements StorageAdapter {
       generatedAt: new Date().toISOString(),
       components,
     });
+  }
+
+  async writeGear(gear: Gear): Promise<void> {
+    const subdir = gear.kind === "bike" ? "bikes" : "shoes";
+    const path = join(this.rootDir, subdir, String(gear.id), "gear.json");
+    await this.writeJson(path, gear);
   }
 
   // ── Convenience ────────────────────────────────────────────────────────────

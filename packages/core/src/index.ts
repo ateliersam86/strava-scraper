@@ -71,6 +71,8 @@ export {
   StravaApiError,
 } from "./api/client.ts";
 export type { RateLimitInfo, StravaApiClientOptions } from "./api/client.ts";
+export { inferGearKind, normalizeGear } from "./api/gear.ts";
+export type { AthleteSummary, Bike, Gear, GearBase, Shoe } from "./types/gear.ts";
 export type {
   LatLngStream,
   MovingStream,

@@ -150,6 +150,17 @@ export class StravaApiClient {
     return this.request<unknown[]>("/athlete/activities", { query });
   }
 
+  /**
+   * GET /gear/{id} — bike or shoe metadata.
+   *
+   * Bikes (id starts with `b`): name, brand_name, model_name, frame_type, distance, description.
+   * Shoes (id starts with `g`): name, brand_name, model_name, distance, description.
+   * Returns the raw payload; pass to {@link normalizeGear} for a typed `Gear`.
+   */
+  async getGear(gearId: string): Promise<Record<string, unknown>> {
+    return this.request<Record<string, unknown>>(`/gear/${gearId}`);
+  }
+
   // ── Internals ─────────────────────────────────────────────────────────────
 
   private async request<T>(

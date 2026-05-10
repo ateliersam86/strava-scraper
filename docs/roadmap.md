@@ -46,10 +46,22 @@
 
 ## Phase 6: API client wrapper ✅
 - [x] OAuth: `buildAuthorizeUrl`, `exchangeCodeForToken`, `refreshAccessToken`
-- [x] `StravaApiClient`: `getAthlete`, `getActivity`, `getActivityStreams`, `getActivityPhotos`, `listActivities`
-- [x] Strict types: `Stream` discriminated union, `StreamSet`
+- [x] `StravaApiClient`: `getAthlete`, `getActivity`, `getActivityStreams`, `getActivityPhotos`, `listActivities`, `getGear`
+- [x] Strict types: `Stream` discriminated union, `StreamSet`, `Gear` (Bike|Shoe), `AthleteSummary`
+- [x] `normalizeGear` helper that turns raw `/gear/{id}` payload into typed `Gear`
 - [x] Rate-limit awareness: `lastRateLimit` updated after every call, `RateLimitedError` on 429
-- [x] Tests: 11 cases (OAuth + API endpoints + rate limit handling)
+- [x] Tests: 15 cases (OAuth + API endpoints + rate limit handling + gear normalization)
+
+## Phase 6b: Gear coverage parity with strava-backup ✅
+- [x] `getGear(id)` API endpoint
+- [x] `Gear` types: `Bike` (with frameType + components), `Shoe`
+- [x] `AthleteSummary` type with bikes/shoes lists
+- [x] `gear` CLI command: enumerates athlete's bikes + shoes, fetches metadata,
+      scrapes components for bikes, writes via `FilesystemAdapter.writeGear`
+- [x] `FilesystemAdapter.writeGear` — bikes → `bikes/{id}/gear.json`, shoes → `shoes/{id}/gear.json`
+- [x] `ActivityPhoto.source` field ("strava" | "instagram") + Instagram filter in
+      `downloadActivityPhotos` (Instagram skipped by default — they're hosted by
+      Instagram, separate concern)
 
 ## Phase 7: Tests + fixtures ✅
 - [x] HTML fixtures: cycling, run/trail-run, manual hike, bike page, about page

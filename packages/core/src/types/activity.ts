@@ -55,12 +55,20 @@ export type ActivityPhoto = {
   caption?: string;
   /** Capture timestamp in ISO 8601. */
   capturedAt?: string;
+  /** Upload timestamp in ISO 8601 (when the photo was attached to Strava). */
+  uploadedAt?: string;
   /** Lat/Lng if EXIF data was preserved. */
   location?: LatLng;
   /** URL of the highest-resolution variant we found. */
   hdUrl: string;
   /** Sized URL map (e.g., 256, 768, 1080, 2048). Keys are pixel widths. */
   urls?: Record<string, string>;
+  /**
+   * Where the photo originated. Strava's API exposes `source: 1` (Strava
+   * native upload) or `source: 2` (Instagram embed). We surface both as a
+   * lowercased label.
+   */
+  source?: "strava" | "instagram";
 };
 
 export type ActivitySplit = {

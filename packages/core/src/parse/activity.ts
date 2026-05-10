@@ -187,15 +187,24 @@ function parsePhotos(activity: Record<string, unknown>): ActivityPhoto[] | undef
     const urls = pickPhotoUrls(raw);
     const hd = highestRes(urls);
     if (!id || !hd) continue;
-    out.push({
+    const photo: ActivityPhoto = {
       id,
-      uniqueId: str(raw["unique_id"] ?? raw["uniqueId"]),
-      caption: str(raw["caption"]),
-      capturedAt: str(raw["created_at"] ?? raw["capturedAt"] ?? raw["uploaded_at"]),
       hdUrl: hd,
-      urls,
-      location: parseLatLng(raw["location"]) ?? parseLatLng(pick(raw, ["coordinates"])),
-    });
+    };
+    const uniqueId = str(raw["unique_id"] ?? raw["uniqueId"]);
+    if (uniqueId) photo.uniqueId = uniqueId;
+    const caption = str(raw["caption"]);
+    if (caption) photo.caption = caption;
+    const capturedAt = str(raw["created_at"] ?? raw["capturedAt"]);
+    if (capturedAt) photo.capturedAt = capturedAt;
+    const uploadedAt = str(raw["uploaded_at"] ?? raw["uploadedAt"]);
+    if (uploadedAt) photo.uploadedAt = uploadedAt;
+    if (urls) photo.urls = urls;
+    const loc = parseLatLng(raw["location"]) ?? parseLatLng(pick(raw, ["coordinates"]));
+    if (loc) photo.location = loc;
+    const source = parsePhotoSource(raw["source"]);
+    if (source) photo.source = source;
+    out.push(photo);
   }
   return out.length ? out : undefined;
 }
@@ -315,6 +324,13 @@ function parseBounds(activity: Record<string, unknown>): Activity["bounds"] {
   const ne = parseLatLng(pick(map ?? activity, ["bounds", "north_east"]));
   if (!sw || !ne) return undefined;
   return { southwest: sw, northeast: ne };
+}
+
+function parsePhotoSource(value: unknown): "strava" | "instagram" | undefined {
+  // Strava encodes source as: 1 = native upload, 2 = Instagram embed.
+  if (value === 1 || value === "1" || value === "strava") return "strava";
+  if (value === 2 || value === "2" || value === "instagram") return "instagram";
+  return undefined;
 }
 
 function parseLatLng(value: unknown): LatLng | undefined {

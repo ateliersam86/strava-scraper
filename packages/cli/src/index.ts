@@ -20,6 +20,7 @@ import { program } from "commander";
 import { downloadActivityCommand } from "./commands/activity.ts";
 import { authLogin, authStatus } from "./commands/auth.ts";
 import { downloadBikeCommand } from "./commands/bike.ts";
+import { downloadGearCommand } from "./commands/gear.ts";
 import { downloadPhotosCommand } from "./commands/photos.ts";
 
 program
@@ -91,6 +92,27 @@ program
       outDir: opts.out,
       jwt: opts.jwt,
       statePath: opts.state,
+    });
+  });
+
+program
+  .command("gear")
+  .description(
+    "Backup all gear (bikes + shoes): metadata via API, components via HTML scrape. " +
+      "Requires OAuth access token (STRAVA_API_TOKEN) for the API endpoints.",
+  )
+  .option("--out <dir>", "Output root directory", "./out")
+  .option("--api-token <value>", "OAuth access token (overrides STRAVA_API_TOKEN)")
+  .option("--jwt <value>", "JWT for components scrape (overrides STRAVA_JWT)")
+  .option("--state <path>", "Playwright session file", ".auth/strava-storage-state.json")
+  .option("--no-components", "Skip the HTML components scrape (API-only metadata)")
+  .action(async (opts) => {
+    await downloadGearCommand({
+      outDir: opts.out,
+      apiToken: opts.apiToken,
+      jwt: opts.jwt,
+      statePath: opts.state,
+      noComponents: opts.components === false,
     });
   });
 

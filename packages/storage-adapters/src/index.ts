@@ -13,6 +13,7 @@
  */
 
 import type { Activity, BikeComponent } from "../../core/src/types/activity.ts";
+import type { Gear } from "../../core/src/types/gear.ts";
 
 export interface StorageAdapter {
   /** Persist a parsed Activity. */
@@ -29,6 +30,10 @@ export interface StorageAdapter {
 
   /** Persist bike component snapshots. */
   writeBikeComponents(bikeId: string, components: BikeComponent[]): Promise<void>;
+
+  /** Persist gear metadata (bike or shoe). The `kind` discriminator decides
+   *  which subdirectory the data lives in (`bikes/{id}` or `shoes/{id}`). */
+  writeGear(gear: Gear): Promise<void>;
 
   /** Read a previously-stored Activity. */
   readActivity(activityId: number | string): Promise<Activity | null>;

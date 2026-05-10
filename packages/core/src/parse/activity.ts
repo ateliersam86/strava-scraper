@@ -26,6 +26,7 @@ import type {
   LatLng,
   StravaActivityType,
 } from "../types/activity.ts";
+import { parseActivityPageReact } from "./activity-react.ts";
 
 export class ActivityPageParseError extends Error {
   constructor(message: string) {
@@ -86,8 +87,33 @@ function matchAssignment(code: string, name: string): string | null {
  *
  * Strava's blob has many shapes; we try a few well-known shapes and skip
  * anything we don't recognize.
+ *
+ * Strategy:
+ * 1. Try the modern React-component extractor (Strava 2025+).
+ *    Validated against the reference account's real activity HTML on 2026-05-10:
+ *    `ADPKudosAndComments` + `MediaThumbnailList` + JS-builder regex for bounds.
+ * 2. Fall back to legacy `__INITIAL_STATE__` / `pageView` / `data-react-props`
+ *    blob (older Strava builds, kept for compatibility).
+ *
+ * Stats (distance, time, elevation gain) are NOT in HTML — fetch via API.
+ * Use {@link enrichTripSegmentFromScraper} to merge HTML + API data.
  */
 export function parseActivityPage(html: string, activityId: number | string): Activity {
+  // 1. Modern React-component path
+  try {
+    const reactResult = parseActivityPageReact(html, activityId);
+    // Successful if we got at least one meaningful field beyond the id
+    const hasUseful =
+      reactResult.name !== undefined ||
+      reactResult.athleteId !== undefined ||
+      (reactResult.photos?.length ?? 0) > 0 ||
+      reactResult.kudosCount !== undefined;
+    if (hasUseful) return reactResult;
+  } catch {
+    // try legacy below
+  }
+
+  // 2. Legacy embedded JSON path (pre-2025 Strava builds)
   const state = extractEmbeddedState(html);
   return normalizeActivity(state, activityId);
 }

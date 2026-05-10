@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Synthetic Activity — Strava (2025+ React format)</title>
+    <script type="application/ld+json">
+      {"@context":"http://schema.org","@type":"Organization","name":"Strava"}
+    </script>
+  </head>
+  <body>
+    <main>
+      <div data-react-class="ADPKudosAndComments" data-react-props='{"kudosCount":42,"canKudo":true,"commentsCount":3,"entityId":"99887766","ownedByCurrentAthlete":false,"commentsEnabled":true,"entity":"activity","ownerName":"Test Athlete","ownerAthleteId":12345,"activityName":"Synthetic Test Ride","comments":[]}'></div>
+
+      <div data-react-class="MediaThumbnailList" data-react-props='{"items":[{"photo_id":"uuid-photo-1","id":1001,"media_type":1,"activity_id":99887766,"caption_escaped":"Sunrise on the climb","large":"https://cdn.example.com/photo1-1536x2048.jpg","thumbnail":"https://cdn.example.com/photo1-thumb.jpg","video":null,"lat":43.5,"lng":5.7,"native":true,"owner_id":12345},{"photo_id":"uuid-photo-2","id":1002,"media_type":1,"activity_id":99887766,"caption_escaped":"From an Insta post &amp; tagged","large":"https://insta.example.com/photo2.jpg","native":false,"owner_id":12345}],"viewableCount":2,"thumbnailSize":"medium","isLoggedIn":true,"category":"activity","profileType":"athlete"}'></div>
+
+      <div data-react-class="ExcludedEfforts" data-react-props='{"activityId":99887766}'></div>
+
+      <script>
+        Strava.Activities.Builders.ActivityViewBuilder
+          .activityAthlete(activityAthlete)
+          .mbr([[43.526542,5.762242],[43.831069,6.468055]])
+          .baseStream("distance");
+      </script>
+    </main>
+  </body>
+</html>

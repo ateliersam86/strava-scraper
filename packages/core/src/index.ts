@@ -24,6 +24,13 @@ export {
   ActivityPageParseError,
 } from "./parse/activity.ts";
 export {
+  parseActivityPageReact,
+  extractReactComponents,
+  findComponent,
+  ActivityReactParseError,
+} from "./parse/activity-react.ts";
+export type { ReactComponent } from "./parse/activity-react.ts";
+export {
   parseBikeComponentsHtml,
   parseBikeMetadataHtml,
   parseBikePageHtml,

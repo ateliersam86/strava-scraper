@@ -107,7 +107,9 @@ export function parseActivityPage(html: string, activityId: number | string): Ac
       reactResult.name !== undefined ||
       reactResult.athleteId !== undefined ||
       (reactResult.photos?.length ?? 0) > 0 ||
-      reactResult.kudosCount !== undefined;
+      reactResult.kudosCount !== undefined ||
+      reactResult.stats !== undefined ||
+      reactResult.gear !== undefined;
     if (hasUseful) return reactResult;
   } catch {
     // try legacy below

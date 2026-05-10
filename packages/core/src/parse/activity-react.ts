@@ -30,6 +30,7 @@
 
 import * as cheerio from "cheerio";
 import type { Activity, ActivityPhoto, LatLng } from "../types/activity.ts";
+import { extractActivityStatsFromHtml } from "./activity-stats.ts";
 
 /**
  * One React component instance from the page. The `props` field is the
@@ -156,6 +157,12 @@ export function parseActivityPageReact(html: string, activityId: number | string
     const ne = toLatLng(neLat, neLng);
     if (sw && ne) out.bounds = { southwest: sw, northeast: ne };
   }
+
+  // ── Stats panel (ul.inline-stats + div.more-stats > table).
+  //    Locale-aware (FR + EN), label-driven mapping.
+  const { stats, deviceName } = extractActivityStatsFromHtml(html);
+  if (Object.keys(stats).length > 0) out.stats = stats;
+  if (deviceName) out.deviceName = deviceName;
 
   // ── Gear name (server-rendered HTML, not React props).
   //    Activity page contains:

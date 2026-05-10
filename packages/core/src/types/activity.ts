@@ -40,9 +40,13 @@ export type ActivityStats = {
   averageHeartrateBpm?: number;
   maxHeartrateBpm?: number;
   averageWatts?: number;
+  /** Max instantaneous power, watts. */
+  maxWatts?: number;
   weightedAverageWatts?: number;
   kilojoules?: number;
   averageCadence?: number;
+  /** Maximum cadence (RPM for cycling, SPM for running). */
+  maxCadence?: number;
   averageTemperatureCelsius?: number;
   caloriesKcal?: number;
 };
@@ -173,6 +177,11 @@ export type Activity = {
   bounds?: { southwest: LatLng; northeast: LatLng };
 
   stats?: ActivityStats;
+  /**
+   * Recording device name (e.g. "Garmin Edge 1030 Plus", "Wahoo Element ROAM",
+   * "Strava iPhone App"). Scraped from the activity HTML page when present.
+   */
+  deviceName?: string;
   photos?: ActivityPhoto[];
   splits?: ActivitySplit[];
   /** Segment efforts, sorted by `startIndex`. */

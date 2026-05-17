@@ -1,51 +1,83 @@
 #!/bin/sh
 # pre-push — garde-fou anti-fuite.
 #
-# Bloque le push si les commits à pousser introduisent un identifiant
-# réel (compte Instagram/Strava, nom, user id) ou un marqueur de secret.
-# Un repo d'outil ne doit contenir que des placeholders (your_account,
-# example_user). Vérifie uniquement les lignes AJOUTÉES par ce push, pas
-# l'historique déjà en place.
+# Refuse le push si les commits à pousser introduisent un secret ou un
+# identifiant listé dans la denylist locale. Conçu pour un repo PUBLIC :
+# ce fichier ne contient aucun identifiant réel — la denylist vit hors
+# du repo et n'est jamais publiée.
 #
-# Activation (une fois par clone) :  git config core.hooksPath .githooks
-# Contournement exceptionnel        :  git push --no-verify
+#   Denylist locale (NON versionnée) :
+#     $ATELIER_GIT_DENYLIST  ou  ~/.config/atelier/git-denylist.txt
+#     une regex ERE par ligne ; lignes vides et lignes # ignorées.
+#     Modèle : .githooks/denylist.sample
+#
+#   Activation (une fois par clone) : git config core.hooksPath .githooks
+#   Scan complet de l'arbre          : .githooks/pre-push --scan-all
+#   Contournement assumé             : git push --no-verify
 
-# Identifiants réels à ne jamais committer dans ce repo + marqueurs de secret.
-PATTERNS='example_user|paul\.reference|example-trip|example_user|m[ée]tayer|1111111111|BEGIN [A-Z ]*PRIVATE KEY|Surface37120'
-
+DENYLIST="${ATELIER_GIT_DENYLIST:-$HOME/.config/atelier/git-denylist.txt}"
 ZERO='0000000000000000000000000000000000000000'
+
+# Motifs de secrets génériques — toujours actifs, publiables sans danger.
+SECRET_PATTERNS='-----BEGIN [A-Z ]*PRIVATE KEY|AKIA[0-9A-Z]{16}|ghp_[0-9A-Za-z]{36}|github_pat_[0-9A-Za-z_]{20,}|xox[baprs]-[0-9A-Za-z-]{10,}|AIza[0-9A-Za-z_-]{35}'
+
+# patterns = secrets génériques + denylist locale (si présente).
+patterns="$SECRET_PATTERNS"
+if [ -f "$DENYLIST" ]; then
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in '' | \#*) continue ;; esac
+    patterns="${patterns}|${line}"
+  done < "$DENYLIST"
+else
+  echo "⚠ pre-push : denylist locale absente ($DENYLIST)." >&2
+  echo "  Seuls les secrets génériques sont vérifiés. Voir .githooks/denylist.sample." >&2
+fi
+
+scan_diff() {
+  # $1 = plage git (ex: A..B). Renvoie les lignes ajoutées interdites.
+  # `-e` : $patterns peut commencer par '-' (motif -----BEGIN…).
+  git diff "$1" -- . ':!.githooks' 2>/dev/null \
+    | grep -E '^\+' | grep -vE '^\+\+\+' \
+    | grep -inE -e "$patterns"
+}
+
+report() {
+  echo "" >&2
+  echo "✗ $1" >&2
+  echo "$2" | head -12 | sed 's/^/   /' >&2
+  echo "" >&2
+  echo "→ Remplace par un placeholder avant de pousser." >&2
+  echo "  Contournement exceptionnel et assumé : git push --no-verify" >&2
+  echo "" >&2
+}
+
+# ── Mode scan complet : .githooks/pre-push --scan-all ──────────────────
+# À lancer AVANT de passer un repo en public — scanne tout l'arbre suivi.
+if [ "$1" = "--scan-all" ]; then
+  hits=$(git grep -inE -e "$patterns" -- ':!.githooks' 2>/dev/null || true)
+  if [ -n "$hits" ]; then
+    report "Scan de l'arbre : identifiant/secret détecté — repo PAS publiable :" "$hits"
+    exit 1
+  fi
+  echo "✓ Arbre suivi propre — aucun identifiant ni secret de la denylist." >&2
+  exit 0
+fi
+
+# ── Mode pre-push normal : git fournit les refs sur stdin ──────────────
 fail=0
-
-while read -r _local_ref local_sha _remote_ref remote_sha; do
-  # Suppression de branche → rien à scanner.
+while read -r _lref local_sha _rref remote_sha; do
   [ "$local_sha" = "$ZERO" ] && continue
-
   if [ "$remote_sha" = "$ZERO" ]; then
-    # Nouvelle branche : on diff contre la branche principale du remote.
     base=$(git rev-parse --quiet --verify origin/main \
-      || git rev-parse --quiet --verify origin/master \
-      || echo "")
-    if [ -n "$base" ]; then range="${base}..${local_sha}"; else range="$local_sha"; fi
+      || git rev-parse --quiet --verify origin/master || echo "")
+    [ -n "$base" ] && range="${base}..${local_sha}" || range="$local_sha"
   else
     range="${remote_sha}..${local_sha}"
   fi
-
-  # Lignes ajoutées (^+, hors en-tête +++) qui matchent un motif interdit.
-  # `.githooks/` est exclu : le hook lui-même contient la denylist.
-  hits=$(git diff "$range" -- . ':!.githooks' 2>/dev/null \
-    | grep -E '^\+' | grep -vE '^\+\+\+' \
-    | grep -inE "$PATTERNS" || true)
-
+  hits=$(scan_diff "$range" || true)
   if [ -n "$hits" ]; then
-    echo "" >&2
-    echo "✗ pre-push BLOQUÉ — identifiant réel ou secret dans les commits à pousser :" >&2
-    echo "$hits" | head -10 | sed 's/^/   /' >&2
-    echo "" >&2
-    echo "→ Remplace par un placeholder (your_account, example_user) avant de pousser." >&2
-    echo "  Contournement exceptionnel et assumé : git push --no-verify" >&2
-    echo "" >&2
+    report "pre-push BLOQUÉ — secret ou identifiant dans les commits à pousser :" "$hits"
     fail=1
   fi
 done
-
 exit $fail

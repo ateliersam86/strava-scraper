@@ -1,0 +1,25 @@
+# Denylist du hook pre-push — MODÈLE.
+#
+# Le hook .githooks/pre-push lit la denylist RÉELLE depuis un fichier
+# LOCAL, hors du repo, donc jamais publié :
+#
+#     ~/.config/atelier/git-denylist.txt
+#     (ou le chemin pointé par $ATELIER_GIT_DENYLIST)
+#
+# Installe-la une fois :
+#     mkdir -p ~/.config/atelier
+#     cp .githooks/denylist.sample ~/.config/atelier/git-denylist.txt
+#     # puis édite ce fichier local avec tes vrais identifiants
+#
+# Format : une expression régulière (ERE, insensible à la casse) par
+# ligne. Lignes vides et lignes commençant par # ignorées.
+#
+# Mets ici ce qui ne doit JAMAIS finir dans un repo public : comptes
+# de réseaux sociaux, slugs privés, prénoms/noms réels, user IDs.
+#
+# Exemples (à remplacer) :
+# mon_compte_instagram
+# mon_compte_strava
+# mon-slug-de-voyage
+# Pr[ée]nom Nom
+# 123456789012
